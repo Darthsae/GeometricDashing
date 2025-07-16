@@ -65,3 +65,9 @@ class Game:
         match self.screen:
             case ScreenType.GAME:
                 self.player.x += Constants.PLAYER_SPEED * timeDelta
+                if not self.player.GroundCheck(self.map.level):
+                    self.player.yVel = min(self.player.yVel + Constants.GRAV * timeDelta, Constants.MAX_PLAYER_VEL)
+                else:
+                    self.player.PushOut()
+                    self.player.yVel = 0
+                self.player.y += self.player.yVel * timeDelta
