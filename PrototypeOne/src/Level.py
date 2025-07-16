@@ -27,6 +27,29 @@ class Level:
                 temp.append(self.data[j][i])
             repo.append(temp)
         return repo
+    
+    def GetRegionConservative(self, region: Rect) -> list[list[TileType]]:
+        x, y = self.ToTile(region.x, region.y)
+        w, h = self.ToTile(region.w, region.h)
+        repo = []
+        for j in range(Clamp(y, 0, len(self.data)), Clamp(h, 0, len(self.data))):
+            temp = []
+            for i in range(Clamp(x, 0, len(self.data[j])), Clamp(w, 0, len(self.data[j]))):
+                temp.append(self.data[j][i])
+            repo.append(temp)
+        return repo
+    
+    def ToJSON(self) -> dict[str]:
+        return {
+            "Name": self.name,
+            "Data": [[a.value for b in self.data for a in b]]
+        }
+    
+    @classmethod
+    def FromJson(cls, jsonData):
+        am = cls(jsonData["Name"])
+        am.data = [[TileType(a) for b in jsonData["Data"] for a in b]]
+        return am
 
     def ToTile(self, x: float, y: float) -> tuple[int, int]:
         return x // Constants.TILE_WIDTH, y // Constants.TILE_WIDTH

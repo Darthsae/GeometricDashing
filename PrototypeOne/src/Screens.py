@@ -5,3 +5,5 @@ class ScreenType(Enum):
     SETTINGS = 1
     GAME = 2
     PAUSE = 3
+    EDITOR = 4
+    SELECTIONS = 5
