@@ -1,7 +1,7 @@
 from enum import Enum
-from . import Assets, Constants
+from . import Assets, Constants, Globals
 from .TextureData import TextureData
-from .Level import Level, TileType
+from .Level import Level, TileDataInstance
 from pygame import Rect
 from time import sleep
 
@@ -37,75 +37,66 @@ class Player:
         H = self.y + self.skinDraw.rect.h
         doo = Rect(self.x - Constants.TILE_WIDTH, self.y - Constants.TILE_WIDTH, W, H)
         moo = level.GetRegion(doo)
-        #print(f"{self.x}, {self.y}")
-        #print(doo)
-        #print("Death Collision: ")
-        #print(doo)
-        #print(len(moo))
         rx, ry = level.ToTile(self.x, self.y)
         rx -= 1
         ry -= 1
         for a in range(len(moo)):
             for b in range(len(moo[a])):
-                if moo[a][b] == TileType.NONE:
+                if moo[a][b].index == -1:
                     return
-                #print(f"{self.x:.2f}, {self.y:.2f}")
-                #print(f"{W:.2f}, {H:.2f}")
-                #print(f"{b}, {a}")
+                tileType = Globals.Tiles[level.used[moo[a][b].index]]
                 bb, ab = (rx + b) * Constants.TILE_WIDTH, (ry + a) * Constants.TILE_WIDTH
-                #print(f"{bb}, {ab}")
                 bt, at = bb + Constants.TILE_WIDTH, ab + Constants.TILE_WIDTH
-                #print(f"{bt}, {at}")
-                topCollision = not H < ab
-                bottomCollision = not self.y > at
-                leftCollision = not W < bb
-                rightCollision = not self.x > bt
-                collides = topCollision and bottomCollision and leftCollision and rightCollision
+                collides: bool = False
+                match 0:
+                    case 0:
+                        topCollision = not H < ab
+                        bottomCollision = not self.y > at
+                        leftCollision = not W < bb
+                        rightCollision = not self.x > bt
+                        collides = topCollision and bottomCollision and leftCollision and rightCollision
                 if collides:
-                    match moo[a][b]:
-                        case TileType.SPIKE:
-                            return True
-                        case TileType.BLOCK:
-                            if a < 2 and b > 2:
+                    match a:
+                        case 0:
+                            if b == 2:
+                                if tileType.solid_sides:
+                                    return True
+                            if tileType.solid_bottom and tileType.harm:
+                                return True
+                        case 1:
+                            if b == 2:
+                                if tileType.solid_sides:
+                                    return True
+                        case 2:
+                            if b == 2:
+                                if tileType.solid_sides:
+                                    return True
+                            if tileType.solid_top and tileType.harm:
                                 return True
         return False
                     
-
-
-
     def GroundCheck(self, level: Level) -> bool:
         W = self.x + self.skinDraw.rect.w
         H = self.y + self.skinDraw.rect.h
         doo = Rect(self.x - Constants.TILE_WIDTH, self.y, W + Constants.TILE_WIDTH, H + Constants.TILE_WIDTH)
         moo = level.GetRegionConservative(doo)
-        #print(f"{self.x}, {self.y}")
-        #print(doo)
-        #print("Death Collision: ")
-        #print(doo)
-        #print(len(moo))
         rx, ry = level.ToTile(self.x, self.y)
         rx -= 1
         ry -= 1
-        #print(moo)
         for a in range(len(moo)):
             for b in range(len(moo[a])):
-                if moo[a][b] == TileType.NONE:
+                if moo[a][b].index == -1:
                     continue
-                if moo[a][b] == TileType.BLOCK:
-                    #print(f"{self.x:.2f}, {self.y:.2f}")
-                    #print(f"{W:.2f}, {H:.2f}")
-                    #print(f"{b}, {a}")
+                tileType = Globals.Tiles[level.used[moo[a][b].index]]
+                if tileType.solid_top:
                     bb, ab = (rx + b) * Constants.TILE_WIDTH, (ry + a) * Constants.TILE_WIDTH
-                    #print(f"{bb}, {ab}")
                     bt, at = bb + Constants.TILE_WIDTH, ab + Constants.TILE_WIDTH
-                    #print(f"{bt}, {at}")
                     topCollision = not H < ab
                     bottomCollision = not self.y > at
                     leftCollision = not W < bb
                     rightCollision = not self.x > bt
                     collides = topCollision and bottomCollision and leftCollision and rightCollision
                     if collides:
-                        #print("Grounded")
                         self.grounded = True
                         return True
         self.grounded = False
@@ -120,9 +111,10 @@ class Player:
         rx, ry = level.ToTile(self.x, self.y)
         for a in range(len(moo)):
             for b in range(len(moo[a])):
-                if moo[a][b] == TileType.NONE:
+                if moo[a][b].index == -1:
                     continue
-                if moo[a][b] == TileType.BLOCK:
+                tileType = Globals.Tiles[level.used[moo[a][b].index]]
+                if tileType.solid_top:
                     #print(f"{self.x:.2f}, {self.y:.2f}")
                     #print(f"{W:.2f}, {H:.2f}")
                     #print(f"{b}, {a}")

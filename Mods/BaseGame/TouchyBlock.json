@@ -1,0 +1,9 @@
+{
+    "Name": "Touchy Block",
+    "Description": "A basic block of all time.",
+    "Texture": "BaseGame:TouchyBlock",
+    "Harm": false,
+    "SideSolid": true,
+    "TopSolid": true,
+    "BottomSolid": true
+}

@@ -11,3 +11,4 @@ class Tool:
     class Textures:
         PlaceTool: TextureData = TextureData.load("../Assets/Textures/Tools/PlaceTool.png")
         EraseTool: TextureData = TextureData.load("../Assets/Textures/Tools/EraseTool.png")
+        SpawnTool: TextureData = TextureData.load("../Assets/Textures/Tools/SpawnTool.png")

@@ -24,3 +24,5 @@ ZOOM: float = 3.0
 CAMERA_REGION: float = 128
 
 CAMERA_SPEED_EDITOR: float = 32
+
+GREEN: Color = Color(0, 200, 0)

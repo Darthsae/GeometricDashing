@@ -1,0 +1,9 @@
+{
+    "Name": "Basic Block",
+    "Description": "A basic block of all time.",
+    "Texture": "BaseGame:BasicBlock",
+    "Harm": false,
+    "SideSolid": true,
+    "TopSolid": true,
+    "BottomSolid": true
+}

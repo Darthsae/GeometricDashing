@@ -1,15 +1,17 @@
 from .Tool import Tool
+from .Map import Map
 from pygame import Rect
 from pygame_gui import UIManager
 from pygame_gui.core import UIElement
 from pygame_gui.elements import UIScrollingContainer, UIPanel, UILabel, UITooltip, UIButton
 
 class Editor:
-    def __init__(self, manager: UIManager):
+    def __init__(self, manager: UIManager, map: Map):
         self.tools: list[Tool] = []
         self.data: dict[str] = {}
         self.selectedTool = -1
         self.manager = manager
+        self.map: Map = map
     
     def HasTool(self) -> bool:
         return self.selectedTool != -1

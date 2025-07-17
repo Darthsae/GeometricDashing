@@ -1,0 +1,9 @@
+{
+    "Name": "Purple Guy",
+    "Description": "A purple dude doing stuff.",
+    "Texture": "BaseGame:PurpleGuy",
+    "Harm": true,
+    "SideSolid": true,
+    "TopSolid": true,
+    "BottomSolid": true
+}

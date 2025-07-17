@@ -1,5 +1,5 @@
 import pygame, pygame_gui
-from src import Constants
+from src import Constants, Globals
 from src.Game import Game
 from src.Screens import ScreenType
 from pygame_gui import UIManager
@@ -14,6 +14,8 @@ deltaAccumulator: float = 0
 game: Game = Game(UIManager((Constants.SCREEN_WIDTH, Constants.SCREEN_HEIGHT)))
 game.SwitchScreen(manager, ScreenType.MAIN_MENU)
 
+Globals.Load()
+
 while running:
     time_delta: float = min(clock.tick(Constants.FPS)/1000.0, 1/Constants.FPS)
     for event in pygame.event.get():
@@ -21,7 +23,10 @@ while running:
             case pygame.QUIT:
                 running = False
             case pygame.KEYDOWN:
-                game.KeyDown(event, time_delta)
+                game.KeyDown(manager, event, time_delta)
+            case pygame.MOUSEBUTTONDOWN:
+                if not (manager.get_hovering_any_element() or game.editor.manager.get_hovering_any_element()):
+                    game.MouseDown(manager, event, time_delta)
         
         manager.process_events(event)
         game.editor.manager.process_events(event)
@@ -31,7 +36,7 @@ while running:
         keys = pygame.key.get_pressed()
         mouse = pygame.mouse.get_pressed()
 
-        game.AccumulatedInput(keys, mouse)
+        game.AccumulatedInput(manager, keys, mouse)
     else:
         deltaAccumulator -= time_delta
 
