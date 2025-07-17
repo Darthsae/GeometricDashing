@@ -26,3 +26,4 @@ CAMERA_REGION: float = 128
 CAMERA_SPEED_EDITOR: float = 32
 
 GREEN: Color = Color(0, 200, 0)
+WHITE: Color = Color(255, 255, 255)

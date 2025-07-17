@@ -182,7 +182,10 @@ class Game:
     def DrawEnd(self, surface: Surface):
         x = (self.player.x - 20)
         endX = self.map.level.endX * Constants.TILE_WIDTH
-        moog = (endX - x)
+        moog = (endX - x) * Constants.ZOOM
+        took = Clamp(moog, 0, Constants.SCREEN_WIDTH)
+        ract = Rect(took, 0, Constants.SCREEN_WIDTH, Constants.SCREEN_HEIGHT)
+        box(surface, ract, Constants.WHITE)
         
     def KeyDown(self, manager: UIManager, event: Event, timeDelta: float):
         match self.screen:
