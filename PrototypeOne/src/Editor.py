@@ -9,10 +9,32 @@ class Editor:
     def __init__(self, manager: UIManager, map: Map):
         self.tools: list[Tool] = []
         self.data: dict[str] = {}
-        self.selectedTool = -1
+        self.selectedTool: int = -1
         self.manager = manager
-        self.map: Map = map
+        self.map = map
     
+    def SetToolByIndex(self, index: int):
+        if self.selectedTool != -1: 
+            self.tools[self.selectedTool].Disable(self)
+
+        if self.selectedTool == index:
+            self.selectedTool = -1
+        else:
+            self.selectedTool = index
+            if self.selectedTool != -1:
+                self.tools[self.selectedTool].Enable(self)
+
+    def ApplyToolByName(self, name: str):
+        """Applies a tool by it's name, this method should only be used when the index is not accessible.
+        
+        Args:
+            name (str): The name of the tool to apply.
+        """
+        for i in range(len(self.tools)):
+            if self.tools[i].name == name:
+                self.SetToolByIndex(i)
+                return
+
     def HasTool(self) -> bool:
         return self.selectedTool != -1
 
@@ -36,12 +58,5 @@ class Editor:
 
     def QuickLambda(self, index: int):
         def Woah():
-            if self.selectedTool != -1: 
-                self.tools[self.selectedTool].Disable(self)
-
-            if self.selectedTool == index:
-                self.selectedTool = -1
-            else:
-                self.selectedTool = index
-                self.tools[self.selectedTool].Enable(self)
+            self.SetToolByIndex(index)
         return Woah

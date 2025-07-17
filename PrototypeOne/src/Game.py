@@ -5,13 +5,18 @@ from pygame import Surface, Event, Rect, Vector2
 from pygame.key import ScancodeWrapper
 from pygame_gui import UIManager
 from pygame_gui.core import UIElement
-from pygame_gui.elements import UIPanel, UIButton, UILabel, UITextEntryLine, UIScrollingContainer
+from pygame_gui.elements import UIPanel, UIButton, UILabel, UITextEntryLine, UIScrollingContainer, UITextBox
 from . import Constants, Assets, Tools, Globals
-from .Level import Level, Clamp
+from .Level import Level, LevelRoughData, Clamp
 import pygame, json, os, random
 from .Editor import Editor
 from .Tool import Tool
-from pygame.gfxdraw import filled_circle
+from pygame.gfxdraw import filled_circle, box
+from enum import Enum
+
+class LevelSelectionContext(Enum):
+    GAME = 0
+    EDITOR = 1
 
 class Game:
     def __init__(self, editorUIManager: UIManager):
@@ -24,7 +29,13 @@ class Game:
         self.editor.AddTool(Tools.PlaceTool())
         self.editor.AddTool(Tools.EraseTool())
         self.editor.AddTool(Tools.SpawnTool())
+        self.editor.AddTool(Tools.MapEditTool())
     
+    def LevelWrapper(self, data: str, manager: UIManager, context: LevelSelectionContext):
+        def Inner():
+            self.LoadLevel(data, manager, context)
+        return Inner
+
     def SwitchScreen(self, manager: UIManager, newScreen: ScreenType):
         manager.clear_and_reset()
         self.uiElements.clear()
@@ -34,26 +45,74 @@ class Game:
                 temp = UIPanel(Rect(0, 0, Constants.SCREEN_WIDTH, Constants.SCREEN_HEIGHT), manager=manager)
                 temp.border_colour = Constants.PRIMARY_COLOR
                 temp.background_colour = Constants.SECONDARY_COLOR
-                UILabel(Rect(20, 20, Constants.SCREEN_WIDTH - 40, 32), "Main Menu", manager, parent_element=temp)
-                UIButton(Rect(20, 52, Constants.SCREEN_WIDTH - 40, 32), "Play", manager, parent_element=temp, command=lambda: self.PlayButtonPressed(manager))
-                UIButton(Rect(20, 84, Constants.SCREEN_WIDTH - 40, 32), "Editor", manager, parent_element=temp, command=lambda: self.EditorButtonPressed(manager))
+                UILabel(Rect(20, 20, Constants.SCREEN_WIDTH - 42, 32), "Main Menu", manager, parent_element=temp)
+                UIButton(Rect(20, 52, Constants.SCREEN_WIDTH - 42, 32), "Play", manager, parent_element=temp, command=lambda: self.PlayButtonPressed(manager))
+                UIButton(Rect(20, 84, Constants.SCREEN_WIDTH - 42, 32), "Editor", manager, parent_element=temp, command=lambda: self.EditorButtonPressed(manager))
+                UIButton(Rect(20, 116, Constants.SCREEN_WIDTH - 42, 32), "Quit", manager, parent_element=temp)
             case ScreenType.GAME:
                 ...
-            case ScreenType.SELECTIONS:
-                ...
+            case ScreenType.LEVEL_SELECTION_GAME:
+                tempSide = UIPanel(Rect(0, 0, 128, Constants.SCREEN_HEIGHT), manager=manager)
+                tempSide.border_colour = Constants.PRIMARY_COLOR
+                tempSide.background_colour = Constants.SECONDARY_COLOR
+                tempMain = UIPanel(Rect(128, 0, Constants.SCREEN_WIDTH - 128, Constants.SCREEN_HEIGHT), manager=manager)
+                tempMain.border_colour = Constants.PRIMARY_COLOR
+                tempMain.background_colour = Constants.SECONDARY_COLOR
+                scroll = UIScrollingContainer(Rect(0, 0, Constants.SCREEN_WIDTH - 130, Constants.SCREEN_HEIGHT - 2), manager, container=tempMain, allow_scroll_x=False, should_grow_automatically=True)
+                i: int = 0
+                for name, path, mockup in self.GetLevels():
+                    UIButton(Rect(0, i * 96, Constants.SCREEN_WIDTH - 134, 32), mockup.name, manager, scroll, command=self.LevelWrapper(mockup.data, manager, LevelSelectionContext.GAME))
+                    UITextBox(mockup.description, Rect(0, i * 96 + 32, Constants.SCREEN_WIDTH - 134, 64), manager, container=scroll)
+                    i += 1
+                UIButton(Rect(0, 96, 126 - 4, 32), "Back", manager, container=tempSide, command=lambda: self.BackButtonPressed(manager))
+            case ScreenType.LEVEL_SELECTION_EDITOR:
+                tempSide = UIPanel(Rect(0, 0, 128, Constants.SCREEN_HEIGHT), manager=manager)
+                tempSide.border_colour = Constants.PRIMARY_COLOR
+                tempSide.background_colour = Constants.SECONDARY_COLOR
+                tempMain = UIPanel(Rect(128, 0, Constants.SCREEN_WIDTH - 128, Constants.SCREEN_HEIGHT), manager=manager)
+                tempMain.border_colour = Constants.PRIMARY_COLOR
+                tempMain.background_colour = Constants.SECONDARY_COLOR
+                scroll = UIScrollingContainer(Rect(0, 0, Constants.SCREEN_WIDTH - 130, Constants.SCREEN_HEIGHT - 2), manager, container=tempMain, allow_scroll_x=False, should_grow_automatically=True)
+                i: int = 0
+                for name, path, mockup in self.GetLevels():
+                    UIButton(Rect(0, i * 96, Constants.SCREEN_WIDTH - 134, 32), mockup.name, manager, scroll, command=self.LevelWrapper(mockup.data, manager, LevelSelectionContext.EDITOR))
+                    UITextBox(mockup.description, Rect(0, i * 96 + 32, Constants.SCREEN_WIDTH - 134, 64), manager, container=scroll)
+                    i += 1
+                UIButton(Rect(0, 0, 126 - 4, 32), "New", manager, container=tempSide, command=lambda: self.NewLevel(manager))
+                UIButton(Rect(0, 32, 126 - 4, 32), "Back", manager, container=tempSide, command=lambda: self.BackButtonPressed(manager))
             case ScreenType.EDITOR:
-                self.map.level = Level("")
                 temp = UIPanel(Rect(0, 0, 128, Constants.SCREEN_HEIGHT), manager=manager)
                 temp.border_colour = Constants.PRIMARY_COLOR
                 temp.background_colour = Constants.SECONDARY_COLOR
-                UILabel(Rect(0, 0, 128, 32), "Editor", manager, parent_element=temp)
-                self.uiElements.append(UITextEntryLine(Rect(0, 32, 128, 32), manager, parent_element=temp, initial_text="A Level"))
-                UIButton(Rect(0, 64, 128, 32), "Save", manager, parent_element=temp, command=lambda: self.SaveLevel(manager))
-                ger = UIScrollingContainer(Rect(0, 96, 128, 256), manager, parent_element=temp, should_grow_automatically=False, allow_scroll_x=False)
+                UILabel(Rect(0, 0, 126 - 4, 32), "Editor", manager, parent_element=temp)
+                self.uiElements.append(UITextEntryLine(Rect(0, 32, 128 - 6, 32), manager, parent_element=temp, initial_text=self.map.level.name))
+                UIButton(Rect(0, 64, 126 - 4, 32), "Save", manager, parent_element=temp, command=lambda: self.SaveLevel(manager))
+                ger = UIScrollingContainer(Rect(0, 96, 128 - 6, 256), manager, parent_element=temp, should_grow_automatically=False, allow_scroll_x=False)
                 ger.should_grow_automatically = True
                 self.editor.GetToolsUI(manager, ger)
-                UIButton(Rect(0, 96 + 256, 128, 32), "Back", manager, parent_element=temp, command=lambda: self.BackButtonPressed(manager))
+                UIButton(Rect(0, 96 + 256, 126 - 4, 32), "Back", manager, parent_element=temp, command=lambda: self.BackButtonPressed(manager))
         
+    def LoadLevel(self, data: str, manager: UIManager, context: LevelSelectionContext):
+        self.map.level = Level.FromJson(data)
+        #print(self.map.level.name)
+        self.camera = Vector2(0, 0)
+        match context:
+            case LevelSelectionContext.GAME:
+                self.player.x = self.map.level.spawnX * Constants.TILE_WIDTH
+                self.player.y = self.map.level.spawnY * Constants.TILE_WIDTH
+                self.player.yVel = 0
+                self.SwitchScreen(manager, ScreenType.GAME)
+            case LevelSelectionContext.EDITOR:
+                self.SwitchScreen(manager, ScreenType.EDITOR)
+
+    def GetLevels(self):
+        pop: list[tuple[str, str, LevelRoughData]] = []
+        for path in os.scandir("../Levels/"):
+            if path.is_file() and path.name[-5::] == ".json":
+                with open(path, "r") as file:
+                    pop.append((path.name[:-5], path.path, LevelRoughData.FromData(json.load(file))))
+        return pop
+    
     def SaveLevel(self, manager: UIManager):
         name = self.uiElements[0].get_text()
         self.map.level.name = name
@@ -64,30 +123,26 @@ class Game:
     def BackButtonPressed(self, manager: UIManager):
         match self.screen:
             case ScreenType.EDITOR:
+                self.SwitchScreen(manager, ScreenType.LEVEL_SELECTION_EDITOR)
+            case ScreenType.LEVEL_SELECTION_GAME:
+                self.SwitchScreen(manager, ScreenType.MAIN_MENU)
+            case ScreenType.LEVEL_SELECTION_EDITOR:
                 self.SwitchScreen(manager, ScreenType.MAIN_MENU)
 
     def PlayButtonPressed(self, manager: UIManager):
-        self.SwitchScreen(manager, ScreenType.GAME)
-        pop: list[str] = []
-        self.map.level = Level("Q")
-        for path in os.scandir("../Levels/"):
-            if path.is_file() and path.name[-5::] == ".json":
-                pop.append(path.path)
-        with open(random.choice(pop)) as file:
-            self.map.level = Level.FromJson(json.load(file))
-        self.camera = Vector2(0, 0)
-        self.player.x = self.map.level.spawnX * Constants.TILE_WIDTH
-        self.player.y = self.map.level.spawnY * Constants.TILE_WIDTH
-        self.player.yVel = 0
+        self.SwitchScreen(manager, ScreenType.LEVEL_SELECTION_GAME)
         #self.map.level.used[0] = "BaseGame:BasicBlock"
         #for y in range(0, len(self.map.level.data)):
         #    for x in range(0, len(self.map.level.data[y])):
         #        self.map.level.data[y][x].index = -1 if y < 17 else 0
 
     def EditorButtonPressed(self, manager: UIManager):
-        self.SwitchScreen(manager, ScreenType.EDITOR)
-        self.map.level = Level("IDK", 120, 20)
+        self.SwitchScreen(manager, ScreenType.LEVEL_SELECTION_EDITOR)
+
+    def NewLevel(self, manager: UIManager):
+        self.map.level = Level("Q")
         self.camera = Vector2(0, 0)
+        self.SwitchScreen(manager, ScreenType.EDITOR)
 
     def Render(self, surface: Surface):
         match self.screen:
@@ -107,6 +162,7 @@ class Game:
                         #print(smoog[y][x])
                         if smoog[y][x].index != -1:
                             surface.blit(pygame.transform.scale_by(Globals.Textures[Globals.Tiles[self.map.level.used[smoog[y][x].index]].texture].texture, Constants.ZOOM), ((-ax + float(x) - posFixX) * Constants.TILE_WIDTH * Constants.ZOOM, (-ay + float(y) - posFixY) * Constants.TILE_WIDTH * Constants.ZOOM, Constants.TILE_WIDTH * Constants.ZOOM, Constants.TILE_WIDTH * Constants.ZOOM))
+                self.DrawEnd(surface)
                 rect: Rect = self.player.skinDraw.rect
                 surface.blit(pygame.transform.scale_by(self.player.skinDraw.texture, Constants.ZOOM), (20 * Constants.ZOOM, (self.player.y - self.camera.y) * Constants.ZOOM, rect.w * Constants.ZOOM, rect.h * Constants.ZOOM))
             case ScreenType.EDITOR:
@@ -121,11 +177,18 @@ class Game:
                             surface.blit(pygame.transform.scale_by(Globals.Textures[Globals.Tiles[self.map.level.used[smoog[y][x].index]].texture].texture, Constants.ZOOM), ((-ax + float(x) - posFixX) * Constants.TILE_WIDTH * Constants.ZOOM, (-ay + float(y) - posFixY) * Constants.TILE_WIDTH * Constants.ZOOM, Constants.TILE_WIDTH * Constants.ZOOM, Constants.TILE_WIDTH * Constants.ZOOM))
                 half = Constants.TILE_WIDTH * 0.5
                 filled_circle(surface, int((self.map.level.spawnX * Constants.TILE_WIDTH + half - self.camera.x) * Constants.ZOOM), int((self.map.level.spawnY * Constants.TILE_WIDTH + half - self.camera.y) * Constants.ZOOM), int(half * Constants.ZOOM), Constants.GREEN)
+                self.DrawEnd(surface)
 
+    def DrawEnd(self, surface: Surface):
+        x = (self.player.x - 20)
+        endX = self.map.level.endX * Constants.TILE_WIDTH
+        moog = (endX - x)
+        
     def KeyDown(self, manager: UIManager, event: Event, timeDelta: float):
         match self.screen:
             case ScreenType.GAME:
                 if self.player.grounded and event.key == pygame.K_SPACE:
+                    Assets.Player.Sounds.PlayerJump.sound.play()
                     self.player.Jump(Constants.PLAYER_JUMP)
                 elif event.key == pygame.K_ESCAPE:
                     self.SwitchScreen(manager, ScreenType.MAIN_MENU)
@@ -183,6 +246,13 @@ class Game:
                     self.player.yVel = 0
 
                 if self.player.DeathCollision(self.map.level):
+                    pygame.mixer.stop()
+                    Assets.Player.Sounds.PlayerDeath.sound.play()
                     self.SwitchScreen(manager, ScreenType.MAIN_MENU)
 
                 self.camera.y = Clamp(self.camera.y, self.player.y - Constants.CAMERA_REGION, self.player.y + Constants.CAMERA_REGION)
+
+                if self.player.x > self.editor.map.level.endX * Constants.TILE_WIDTH:
+                    pygame.mixer.stop()
+                    Assets.Player.Sounds.PlayerJump.sound.play()
+                    self.SwitchScreen(manager, ScreenType.MAIN_MENU)

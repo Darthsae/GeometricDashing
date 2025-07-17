@@ -5,5 +5,7 @@
     "Harm": true,
     "SideSolid": true,
     "TopSolid": true,
-    "BottomSolid": true
+    "BottomSolid": true,
+    "LeftPercent": 0.3,
+    "RightPercent": 0.7
 }

@@ -43,36 +43,28 @@ class Player:
         for a in range(len(moo)):
             for b in range(len(moo[a])):
                 if moo[a][b].index == -1:
-                    return
+                    continue
                 tileType = Globals.Tiles[level.used[moo[a][b].index]]
-                bb, ab = (rx + b) * Constants.TILE_WIDTH, (ry + a) * Constants.TILE_WIDTH
-                bt, at = bb + Constants.TILE_WIDTH, ab + Constants.TILE_WIDTH
+                bb, ab = (rx + b + tileType.left_percent) * Constants.TILE_WIDTH, (ry + a + tileType.top_percent) * Constants.TILE_WIDTH
+                bt, at = (rx + b + tileType.right_percent) * Constants.TILE_WIDTH, (ry + a + tileType.bottom_percent) * Constants.TILE_WIDTH
                 collides: bool = False
                 match 0:
                     case 0:
-                        topCollision = not H < ab
-                        bottomCollision = not self.y > at
-                        leftCollision = not W < bb
-                        rightCollision = not self.x > bt
+                        topCollision = H > ab
+                        bottomCollision = self.y < at
+                        leftCollision = W > bb
+                        rightCollision = self.x < bt
                         collides = topCollision and bottomCollision and leftCollision and rightCollision
                 if collides:
-                    match a:
-                        case 0:
-                            if b == 2:
-                                if tileType.solid_sides:
-                                    return True
-                            if tileType.solid_bottom and tileType.harm:
-                                return True
-                        case 1:
-                            if b == 2:
-                                if tileType.solid_sides:
-                                    return True
-                        case 2:
-                            if b == 2:
-                                if tileType.solid_sides:
-                                    return True
-                            if tileType.solid_top and tileType.harm:
-                                return True
+                    if b == 2:
+                        if tileType.solid_sides:
+                            return True
+                    elif a == 0:
+                        if tileType.solid_bottom and tileType.harm:
+                            return True
+                    elif a == 2:
+                        if tileType.solid_top and tileType.harm:
+                            return True
         return False
                     
     def GroundCheck(self, level: Level) -> bool:
@@ -89,12 +81,12 @@ class Player:
                     continue
                 tileType = Globals.Tiles[level.used[moo[a][b].index]]
                 if tileType.solid_top:
-                    bb, ab = (rx + b) * Constants.TILE_WIDTH, (ry + a) * Constants.TILE_WIDTH
-                    bt, at = bb + Constants.TILE_WIDTH, ab + Constants.TILE_WIDTH
-                    topCollision = not H < ab
-                    bottomCollision = not self.y > at
-                    leftCollision = not W < bb
-                    rightCollision = not self.x > bt
+                    bb, ab = (rx + b + tileType.left_percent) * Constants.TILE_WIDTH, (ry + a + tileType.top_percent) * Constants.TILE_WIDTH
+                    bt, at = (rx + b + tileType.right_percent) * Constants.TILE_WIDTH, (ry + a + tileType.bottom_percent) * Constants.TILE_WIDTH
+                    topCollision = H > ab
+                    bottomCollision = self.y < at
+                    leftCollision = W > bb
+                    rightCollision = self.x < bt
                     collides = topCollision and bottomCollision and leftCollision and rightCollision
                     if collides:
                         self.grounded = True
@@ -115,17 +107,12 @@ class Player:
                     continue
                 tileType = Globals.Tiles[level.used[moo[a][b].index]]
                 if tileType.solid_top:
-                    #print(f"{self.x:.2f}, {self.y:.2f}")
-                    #print(f"{W:.2f}, {H:.2f}")
-                    #print(f"{b}, {a}")
-                    bb, ab = (rx + b) * Constants.TILE_WIDTH, (ry + a) * Constants.TILE_WIDTH
-                    #print(f"{bb}, {ab}")
-                    bt, at = bb + Constants.TILE_WIDTH, ab + Constants.TILE_WIDTH
-                    #print(f"{bt}, {at}")
-                    topCollision = not H < ab
-                    bottomCollision = not self.y > at
-                    leftCollision = not W < bb
-                    rightCollision = not self.x > bt
+                    bb, ab = (rx + b + tileType.left_percent) * Constants.TILE_WIDTH, (ry + a + tileType.top_percent) * Constants.TILE_WIDTH
+                    bt, at = (rx + b + tileType.right_percent) * Constants.TILE_WIDTH, (ry + a + tileType.bottom_percent) * Constants.TILE_WIDTH
+                    topCollision = H > ab
+                    bottomCollision = self.y < at
+                    leftCollision = W > bb
+                    rightCollision = self.x < bt
                     collides = topCollision and bottomCollision and leftCollision and rightCollision
                     if collides:
                         self.y = ab - self.skinDraw.rect.h

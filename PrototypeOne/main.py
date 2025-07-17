@@ -1,11 +1,13 @@
 import pygame, pygame_gui
+
+pygame.init()
+pygame.mixer.init()
+
 from src import Constants, Globals
 from src.Game import Game
 from src.Screens import ScreenType
 from pygame_gui import UIManager
 
-pygame.init()
-pygame.mixer.init()
 screen = pygame.display.set_mode((Constants.SCREEN_WIDTH, Constants.SCREEN_HEIGHT))
 clock = pygame.time.Clock()
 manager = UIManager((Constants.SCREEN_WIDTH, Constants.SCREEN_HEIGHT))
