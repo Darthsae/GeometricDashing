@@ -46,6 +46,7 @@ class Level:
     def __init__(self, name: str, width: int = 120, height: int = 20):
         self.name = name
         self.description: str = ""
+        self.music: str = "BaseGame:TestSongOne"
         self.spawnX: int = 0
         self.spawnY: int = 0
         self.endX: int = 60
@@ -97,6 +98,7 @@ class Level:
         return {
             "Name": self.name,
             "Description": self.description,
+            "Music": self.music,
             "Spawn": [self.spawnX, self.spawnY],
             "EndX": self.endX,
             "Used": self.used,
@@ -108,6 +110,7 @@ class Level:
     def FromJson(cls, jsonData: dict[str]):
         am = cls(jsonData["Name"])
         am.description = jsonData.get("Description", "No description.")
+        am.music = jsonData["Music"]
         am.used = jsonData["Used"]
         am.mods = jsonData["Mods"]
         am.spawnX = jsonData["Spawn"][0]

@@ -5,7 +5,7 @@ from pygame import Surface, Event, Rect, Vector2
 from pygame.key import ScancodeWrapper
 from pygame_gui import UIManager
 from pygame_gui.core import UIElement
-from pygame_gui.elements import UIPanel, UIButton, UILabel, UITextEntryLine, UIScrollingContainer, UITextBox
+from pygame_gui.elements import UIPanel, UIButton, UILabel, UITextEntryLine, UIScrollingContainer, UITextBox, UIProgressBar
 from . import Constants, Assets, Tools, Globals
 from .Level import Level, LevelRoughData, Clamp
 import pygame, json, os, random
@@ -29,6 +29,7 @@ class Game:
         self.editor.AddTool(Tools.PlaceTool())
         self.editor.AddTool(Tools.EraseTool())
         self.editor.AddTool(Tools.SpawnTool())
+        self.editor.AddTool(Tools.EndTool())
         self.editor.AddTool(Tools.MapEditTool())
     
     def LevelWrapper(self, data: str, manager: UIManager, context: LevelSelectionContext):
@@ -50,7 +51,12 @@ class Game:
                 UIButton(Rect(20, 84, Constants.SCREEN_WIDTH - 42, 32), "Editor", manager, parent_element=temp, command=lambda: self.EditorButtonPressed(manager))
                 UIButton(Rect(20, 116, Constants.SCREEN_WIDTH - 42, 32), "Quit", manager, parent_element=temp)
             case ScreenType.GAME:
-                ...
+                self.uiElements.append(UIProgressBar(Rect(128, 20, Constants.SCREEN_WIDTH - 256, 32), manager))
+                self.uiElements[0].border_colour = Constants.TERTIARY_COLOR
+                self.uiElements[0].bar_filled_colour = Constants.SECONDARY_COLOR
+                self.uiElements[0].bar_unfilled_colour = Constants.PRIMARY_COLOR
+                self.uiElements[0].text_colour = Constants.WHITE
+                self.uiElements[0].text_shadow_colour = Constants.LIGHT_GRAY
             case ScreenType.LEVEL_SELECTION_GAME:
                 tempSide = UIPanel(Rect(0, 0, 128, Constants.SCREEN_HEIGHT), manager=manager)
                 tempSide.border_colour = Constants.PRIMARY_COLOR
@@ -102,6 +108,7 @@ class Game:
                 self.player.y = self.map.level.spawnY * Constants.TILE_WIDTH
                 self.player.yVel = 0
                 self.SwitchScreen(manager, ScreenType.GAME)
+                Globals.Music[self.map.level.music].sound.play()
             case LevelSelectionContext.EDITOR:
                 self.SwitchScreen(manager, ScreenType.EDITOR)
 
@@ -123,6 +130,7 @@ class Game:
     def BackButtonPressed(self, manager: UIManager):
         match self.screen:
             case ScreenType.EDITOR:
+                self.editor.manager.clear_and_reset()
                 self.SwitchScreen(manager, ScreenType.LEVEL_SELECTION_EDITOR)
             case ScreenType.LEVEL_SELECTION_GAME:
                 self.SwitchScreen(manager, ScreenType.MAIN_MENU)
@@ -177,7 +185,7 @@ class Game:
                         if smoog[y][x].index != -1:
                             surface.blit(pygame.transform.scale_by(Globals.Textures[Globals.Tiles[self.map.level.used[smoog[y][x].index]].texture].texture, Constants.ZOOM), ((-ax + float(x) - posFixX) * Constants.TILE_WIDTH * Constants.ZOOM, (-ay + float(y) - posFixY) * Constants.TILE_WIDTH * Constants.ZOOM, Constants.TILE_WIDTH * Constants.ZOOM, Constants.TILE_WIDTH * Constants.ZOOM))
                 half = Constants.TILE_WIDTH * 0.5
-                filled_circle(surface, int((self.map.level.spawnX * Constants.TILE_WIDTH + half - self.camera.x) * Constants.ZOOM), int((self.map.level.spawnY * Constants.TILE_WIDTH + half - self.camera.y) * Constants.ZOOM), int(half * Constants.ZOOM), Constants.GREEN)
+                filled_circle(surface, int((self.map.level.spawnX * Constants.TILE_WIDTH + half - self.camera.x) * Constants.ZOOM), int((self.map.level.spawnY * Constants.TILE_WIDTH + half - self.camera.y) * Constants.ZOOM), int(half * Constants.ZOOM), Constants.DIMMED_BRIGHT_GREEN)
                 self.DrawEnd(surface)
 
     def DrawEnd(self, surface: Surface):
@@ -236,6 +244,8 @@ class Game:
             case ScreenType.GAME:
                 self.player.x += Constants.PLAYER_SPEED * timeDelta
                 self.player.y += self.player.yVel * timeDelta
+
+                self.uiElements[0].set_current_progress((1.0 - (self.editor.map.level.endX * Constants.TILE_WIDTH - self.player.x) / (self.editor.map.level.endX * Constants.TILE_WIDTH)) * 100.0)
 
                 #print(f"{self.player.x:.2f}, {self.player.y:.2f}")
 

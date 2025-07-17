@@ -25,5 +25,6 @@ CAMERA_REGION: float = 128
 
 CAMERA_SPEED_EDITOR: float = 32
 
-GREEN: Color = Color(0, 200, 0)
+DIMMED_BRIGHT_GREEN: Color = Color(0, 200, 0)
 WHITE: Color = Color(255, 255, 255)
+LIGHT_GRAY: Color = Color(200, 200, 200)

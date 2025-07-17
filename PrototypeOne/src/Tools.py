@@ -66,7 +66,7 @@ class SpawnTool(Tool):
         game.map.level.spawnX = tileX
         game.map.level.spawnY = tileY
 
-class SpawnTool(Tool):
+class EndTool(Tool):
     def __init__(self):
         super().__init__("Set End", "Set end position to win.", Assets.Tool.Textures.SpawnTool)
 
@@ -97,6 +97,9 @@ class MapEditTool(Tool):
     def UpdateDescription(self, editor: "Editor", description: UITextEntryBox):
         editor.map.level.description = description.get_text()
 
+    def UpdateMusic(self, editor: "Editor", dropdown: UIDropDownMenu):
+        editor.map.level.music = dropdown.selected_option[0]
+
     def Enable(self, editor: "Editor"):
         window = UIWindow(Rect(128, 128, 256, 512 + 28), editor.manager)
         window.on_close_window_button_pressed = lambda: editor.SetToolByIndex(-1)
@@ -106,6 +109,8 @@ class MapEditTool(Tool):
         UIButton(Rect(0, 64, 256 - 4, 32), "Change", editor.manager, scroll, command=lambda: self.SelectedOption(editor, tempText, tempDropdown))
         description = UITextEntryBox(Rect(0, 96, 256 - 4, 64), editor.map.level.description, editor.manager, scroll)
         UIButton(Rect(0, 160, 256 - 4, 32), "Update Description", editor.manager, scroll, command=lambda: self.UpdateDescription(editor, description))
+        drop = UIDropDownMenu(list(Globals.Music.keys()), editor.map.level.music, Rect(0, 192, 256 - 4, 32), editor.manager, scroll)
+        UIButton(Rect(0, 224, 256 - 4, 32), "Update Music", editor.manager, scroll, command=lambda: self.UpdateMusic(editor, drop))
 
     def Disable(self, editor: "Editor"):
         editor.manager.clear_and_reset()
