@@ -149,13 +149,14 @@ class Game:
             case ScreenType.MAIN_MENU:
                 ...
             case ScreenType.GAME:
+                self.camera.x = (self.player.x - 20)
                 ax = (self.camera.x) // Constants.TILE_WIDTH if self.camera.x < 0 else 0
                 ay = (self.camera.y) // Constants.TILE_WIDTH if self.camera.y < 0 else 0
-                posFixX = (self.player.x - 20) / float(Constants.TILE_WIDTH) - (self.player.x - 20) // Constants.TILE_WIDTH
+                posFixX = (self.camera.x) / float(Constants.TILE_WIDTH) - (self.camera.x) // Constants.TILE_WIDTH
                 posFixY = (self.camera.y) / Constants.TILE_WIDTH - (self.camera.y) // Constants.TILE_WIDTH
                 #print(f"{ax:.2f} {ay:.2f} {posFixX:.2f} {posFixY:.2f} {(self.player.x - 20):.2f} {self.camera.y:.2f} {(Constants.SCREEN_WIDTH / Constants.ZOOM):.2f} {(Constants.SCREEN_HEIGHT / Constants.ZOOM):.2f}")
                 #print(Rect((self.player.x - 20), self.camera.y, (self.player.x - 20) + Constants.SCREEN_WIDTH / Constants.ZOOM, self.camera.y + Constants.SCREEN_HEIGHT / Constants.ZOOM))
-                smoog = self.map.level.GetRegion(Rect((self.player.x - 20), self.camera.y, (self.player.x - 20) + Constants.SCREEN_WIDTH / Constants.ZOOM, self.camera.y + Constants.SCREEN_HEIGHT / Constants.ZOOM))
+                smoog = self.map.level.GetRegion(Rect((self.camera.x), self.camera.y, (self.camera.x) + Constants.SCREEN_WIDTH / Constants.ZOOM, self.camera.y + Constants.SCREEN_HEIGHT / Constants.ZOOM))
                 #print(smoog)
                 for y in range(0, len(smoog)):
                     for x in range(0, len(smoog[y])):
@@ -180,12 +181,8 @@ class Game:
                 self.DrawEnd(surface)
 
     def DrawEnd(self, surface: Surface):
-        x = (self.player.x - 20)
-        endX = self.map.level.endX * Constants.TILE_WIDTH
-        moog = (endX - x) * Constants.ZOOM
-        took = Clamp(moog, 0, Constants.SCREEN_WIDTH)
-        ract = Rect(took, 0, Constants.SCREEN_WIDTH, Constants.SCREEN_HEIGHT)
-        box(surface, ract, Constants.WHITE)
+        box(surface, Rect(Clamp(((self.map.level.endX * Constants.TILE_WIDTH) - self.camera.x) * Constants.ZOOM, 
+            0, Constants.SCREEN_WIDTH), 0, Constants.SCREEN_WIDTH, Constants.SCREEN_HEIGHT), Constants.WHITE)
         
     def KeyDown(self, manager: UIManager, event: Event, timeDelta: float):
         match self.screen:
@@ -249,6 +246,7 @@ class Game:
                     self.player.yVel = 0
 
                 if self.player.DeathCollision(self.map.level):
+                    print("Died.")
                     pygame.mixer.stop()
                     Assets.Player.Sounds.PlayerDeath.sound.play()
                     self.SwitchScreen(manager, ScreenType.MAIN_MENU)
@@ -256,6 +254,7 @@ class Game:
                 self.camera.y = Clamp(self.camera.y, self.player.y - Constants.CAMERA_REGION, self.player.y + Constants.CAMERA_REGION)
 
                 if self.player.x > self.editor.map.level.endX * Constants.TILE_WIDTH:
+                    print("Win game.")
                     pygame.mixer.stop()
                     Assets.Player.Sounds.PlayerJump.sound.play()
                     self.SwitchScreen(manager, ScreenType.MAIN_MENU)

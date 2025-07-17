@@ -58,12 +58,15 @@ class Player:
                 if collides:
                     if b == 2:
                         if tileType.solid_sides:
+                            print(f"Died to the sides at {(rx + b):.2f}, {(ry + a):.2f}.")
                             return True
                     elif a == 0:
                         if tileType.solid_bottom and tileType.harm:
+                            print("Died to the bottom death.")
                             return True
                     elif a == 2:
                         if tileType.solid_top and tileType.harm:
+                            print("Died to the floor death.")
                             return True
         return False
                     
